@@ -10,6 +10,9 @@ fi
 
 # create build folder
 
+mkdir libs
+mkdir papp
+
 mkdir build
 cd build
 
