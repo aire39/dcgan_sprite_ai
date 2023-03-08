@@ -18,7 +18,7 @@ if [ $? -eq 0 ]; then
 	echo "extracting successful!"
 else
 	echo "7zip missing to extract archived file! Will download command..."
-	pacman -S 7zip
+	pacman -S mingw-w64-x86_64-7zip
 	echo "complete... Will contunie with extracting files!"
 	7z x pytorch_1.13.0_release.zip -o../../libs/pytorch_1_13_0_release
 fi
