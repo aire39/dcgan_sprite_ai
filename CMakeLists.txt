@@ -1,8 +1,40 @@
 cmake_minimum_required (VERSION 3.23.0)
 project (spriteai)
 
-set(CMAKE_CXX_STANDARD 20)
+enable_language(CUDA)
+
+if(${CMAKE_VERSION} VERSION_LESS "3.26.0")
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CUDA_STANDARD 17)
+  message("cmake version less than 3.26 available. Will use -std17")
+else()
+  if (${CMAKE_CUDA_COMPILER_VERSION} VERSION_GREATER "12.1.0")
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CUDA_STANDARD 20)
+    message("Cuda 12.1 and cmake 3.26 available. Will use -std20")
+  else()
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD 17)
+    message("Cuda less than 12.1 or cmake version less than 3.26 available. Will use -std17")
+  endif()
+endif()
+
 set(CMAKE_C_STANDARD 11)
+
+message("Using CUDA Version: ${CMAKE_CUDA_COMPILER_VERSION}")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message("Build Debug")
+  list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_debug/libtorch/")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  message("Build Release")
+  list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_release/libtorch/")
+else()
+  message("Build Debug")
+  list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_debug/libtorch/")
+endif()
+
+find_package(Torch REQUIRED)
 
 IF (EXISTS ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release AND EXISTS ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug)
   message("-- PYTORCH: Found pytorch library folders!")
@@ -11,42 +43,15 @@ else()
   execute_process(
     COMMAND sh "${PROJECT_SOURCE_DIR}/scripts/libs/getlibs.sh"
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/scripts/libs/"
-)
+  )
 endif()
-
-set(PYTORCH_CAPI_RELEASE ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release/libtorch/include/torch/csrc)
-set(PYTORCH_INCLUDE_RELEASE ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release/libtorch/include/torch/csrc/api/include)
-set(PYTORCH_LIBS_RELEASE ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release/libtorch/lib/)
-
-set(PYTORCH_INCLUDE_TOP_DEBUG ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/include)
-set(PYTORCH_INCLUDE_CAPI_DEBUG ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/include/torch/csrc)
-set(PYTORCH_INCLUDE_DEBUG ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/include/torch/csrc/api/include)
-set(PYTORCH_LIBS_DEBUG ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/lib/)
-
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PYTORCH_INCLUDE_TOP_DEBUG})
-include_directories(${PYTORCH_INCLUDE_CAPI_DEBUG})
-include_directories(${PYTORCH_INCLUDE_DEBUG})
 
 add_executable(spriteai
   capp/main.cpp
 )
 
-target_include_directories(spriteai PRIVATE
-  "${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/include"
-)
+message("PYTORCH LIBS: ${TORCH_LIBRARIES}")
 
 target_link_libraries(spriteai
-  ${PYTORCH_LIBS_DEBUG}/*.lib
+  ${TORCH_LIBRARIES}
 )
-
-#[[
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_SOURCE_DIR}/capp/build"
-)
-
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/scripts/build_app/build.sh" "${PROJECT_SOURCE_DIR}/capp/build/"
-)
-
-#]]

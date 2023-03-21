@@ -1,8 +1,9 @@
 #include <iostream>
-#include <api/include/torch/torch.h>
+#include <torch/torch.h>
 
 int main(int argc, char*argv[])
 {
-  std::cout << "hello world" << std::endl;
+  std::cout << "Hello World!" << std::endl;
+
   return 0;
 }
