@@ -48,13 +48,3 @@ if [ $? != 0 ]; then
 fi
 
 cmake --build . --config $build_type
-
-# copy needed dll files
-
-if [ "$build_type" == "debug" ]; then
-	echo "copy needed dlls for Debug folder"
-	cp ../libs/pytorch_1_13_0_$pytorch_build_type/libtorch/lib/*.dll Debug/
-else
-	echo "copy needed dlls for Release folder"
-	cp ../libs/pytorch_1_13_0_$pytorch_build_type/libtorch/lib/*.dll Release/
-fi

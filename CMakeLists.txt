@@ -26,15 +26,29 @@ message("Using CUDA Version: ${CMAKE_CUDA_COMPILER_VERSION}")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("Build Debug")
   list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_debug/libtorch/")
+  if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    message("Using MSVC")
+    add_compile_options(/Od)
+  else ()
+    message("Using GCC")
+    add_compile_options(-O0 -g)
+    add_definitions(/D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+  endif ()
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   message("Build Release")
   list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_release/libtorch/")
+  if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    message("Using MSVC")
+    add_compile_options(/Ot)
+    add_definitions(/D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING)
+  else()
+    message("Using GCC")
+    add_compile_options(-O3 -g)
+  endif ()
 else()
   message("Build Debug")
   list(APPEND CMAKE_PREFIX_PATH "libs/pytorch_1_13_0_debug/libtorch/")
 endif()
-
-find_package(Torch REQUIRED)
 
 IF (EXISTS ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release AND EXISTS ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug)
   message("-- PYTORCH: Found pytorch library folders!")
@@ -46,6 +60,8 @@ else()
   )
 endif()
 
+find_package(Torch REQUIRED)
+
 add_executable(spriteai
   capp/main.cpp
 )
@@ -55,3 +71,19 @@ message("PYTORCH LIBS: ${TORCH_LIBRARIES}")
 target_link_libraries(spriteai
   ${TORCH_LIBRARIES}
 )
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  FILE(GLOB dllfiles ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_debug/libtorch/lib/*.dll)
+  add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                     COMMAND ${CMAKE_COMMAND} -E copy
+                     ${dllfiles}
+                     ${CMAKE_CURRENT_BINARY_DIR})
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  FILE(GLOB dllfiles ${PROJECT_SOURCE_DIR}/libs/pytorch_1_13_0_release/libtorch/lib/*.dll)
+  add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+                     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                     COMMAND ${CMAKE_COMMAND} -E copy
+                     ${dllfiles}
+                     ${CMAKE_CURRENT_BINARY_DIR})
+endif ()
