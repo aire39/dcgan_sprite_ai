@@ -7,20 +7,7 @@ if [[ "$MSYSTEM" != "MINGW64" ]]; then
 	exit 1
 fi
 
-build_type=$1
-pytorch_build_type=$2
-
-if [[ -z $build_type ]]; then
-	build_type="debug"
-fi
-
-echo "build type: $build_type"
-
-if [[ -z $pytorch_build_type ]]; then
-	pytorch_build_type="release"
-fi
-
-echo "build type: $pytorch_build_type"
+build_examples=$1
 
 # create build folder
 
@@ -32,10 +19,12 @@ cd build
 
 # generate amd build
 
-if [ "$pytorch_build_type" == "debug" ]; then
-	cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Debug ..
+if [[ -z build_examples ]]; then
+  cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Debug -DBUILD_EXAMPLES=FALSE ..
+  cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=FALSE ..
 else
-	cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release ..
+  cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Debug -DBUILD_EXAMPLES=TRUE ..
+  cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=TRUE ..
 fi
 
 if [ $? != 0 ]; then
@@ -47,4 +36,5 @@ if [ $? != 0 ]; then
 	fi
 fi
 
-cmake --build . --config $build_type
+cmake --build . --config debug
+cmake --build . --config release
