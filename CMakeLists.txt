@@ -74,7 +74,7 @@ endif (${BUILD_EXAMPLES})
 
 add_executable(spriteai
         capp/main.cpp
-        )
+        capp/GeneratorImpl.cpp capp/GeneratorImpl.h capp/DiscriminatorImpl.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME}
         ${TORCH_LIBRARIES}
         )
