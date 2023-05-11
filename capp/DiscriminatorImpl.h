@@ -4,7 +4,7 @@
 #include <array>
 #include <torch/torch.h>
 
-class DiscriminatorImpl : torch::nn::Module {
+class DiscriminatorImpl : public torch::nn::Module {
   public:
     DiscriminatorImpl();
     torch::Tensor forward(torch::Tensor x);
@@ -13,5 +13,3 @@ class DiscriminatorImpl : torch::nn::Module {
     std::array<torch::nn::Conv2d, 4> convolutions;
     std::array<torch::nn::BatchNorm2d, 2> batchNormalizations;
 };
-
-TORCH_MODULE(Discriminator);
