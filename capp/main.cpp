@@ -1,7 +1,12 @@
 #include <iostream>
 #include <memory>
+#include <torch/torch.h>
 #include "GeneratorImpl.h"
 #include "DiscriminatorImpl.h"
+#include "ImageFolder.h"
+
+#include <vector>
+#include <filesystem>
 
 int main(int argc, char*argv[])
 {
@@ -10,7 +15,7 @@ int main(int argc, char*argv[])
   auto generator = std::make_unique<GeneratorImpl>(noise_size);
   auto discriminator = std::make_unique<DiscriminatorImpl>();
 
-  std::cout << "Hello World!" << std::endl;
+  auto dataset = ImageFolder("data/creatures/images", '_');
 
   return 0;
 }
