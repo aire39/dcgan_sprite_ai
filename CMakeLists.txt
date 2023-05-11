@@ -65,6 +65,12 @@ else()
   )
 endif()
 
+include_directories(libs)
+
+set(BUILD_SHARED_LIBS FALSE) # build using the static libraries
+add_subdirectory(libs/sfml)
+
+find_package (Threads REQUIRED)
 find_package(Torch REQUIRED)
 message("PYTORCH LIBS: ${TORCH_LIBRARIES}")
 
@@ -74,10 +80,17 @@ endif (${BUILD_EXAMPLES})
 
 add_executable(spriteai
         capp/main.cpp
-        capp/GeneratorImpl.cpp capp/GeneratorImpl.h capp/DiscriminatorImpl.cpp)
+        capp/GeneratorImpl.cpp capp/GeneratorImpl.h capp/DiscriminatorImpl.cpp capp/ImageFolder.cpp capp/ImageFolder.h)
 target_link_libraries(${CMAKE_PROJECT_NAME}
         ${TORCH_LIBRARIES}
+        sfml-window
+        sfml-graphics
+        Threads::Threads
         )
+
+target_include_directories(spriteai PUBLIC
+        $<TARGET_PROPERTY:sfml-window,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:sfml-graphics,INTERFACE_INCLUDE_DIRECTORIES>)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   target_link_options(${CMAKE_PROJECT_NAME} PUBLIC /DEBUG:FULL)
