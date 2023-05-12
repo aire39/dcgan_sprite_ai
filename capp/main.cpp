@@ -4,6 +4,12 @@
 #include "SeqDiscriminator.h"
 #include "ImageFolder.h"
 
+#define SAVE_IMAGES_RGB false
+#if SAVE_IMAGES_RGB
+#include <fstream>
+#endif
+
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 {
   constexpr int64_t knoise_size = 100;
@@ -69,58 +75,81 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
     for(auto& batch : *data_loader)
     {
-        // train discriminator
+      // train discriminator
 
-        // real images
-        discriminator->zero_grad();
-        torch::Tensor real_images = batch.data.to(device);
-        torch::Tensor real_labels = torch::empty(batch.data.size(0), device).uniform_(0.8, 1.0);
+      // real images
+      discriminator->zero_grad();
+      torch::Tensor real_images = batch.data.to(device);
+      torch::Tensor real_labels = torch::empty(batch.data.size(0), device).uniform_(0.8, 1.0);
+      torch::Tensor real_output = discriminator->forward(real_images).reshape({real_labels.sizes()});
+      torch::Tensor d_loss_real = torch::binary_cross_entropy(real_output, real_labels);
+      d_loss_real.backward();
 
-        torch::Tensor real_output = discriminator->forward(real_images).reshape({real_labels.sizes()});
-        torch::Tensor d_loss_real = torch::binary_cross_entropy(real_output, real_labels);
-        d_loss_real.backward();
+      // fake images
+      torch::Tensor noise = torch::randn({batch.data.size(0), klaten, 1, 1}, device);
+      torch::Tensor fake_images = generator->forward(noise);
+      torch::Tensor fake_labels = torch::zeros(batch.data.size(0), device);
+      torch::Tensor fake_output = discriminator->forward(fake_images.detach()).reshape({fake_labels.sizes()});
+      torch::Tensor d_loss_fake = torch::binary_cross_entropy(fake_output, fake_labels);
+      d_loss_fake.backward();
 
-        // fake images
-        torch::Tensor noise = torch::randn({batch.data.size(0), klaten, 1, 1}, device);
-        torch::Tensor fake_images = generator->forward(noise);
-        torch::Tensor fake_labels = torch::zeros(batch.data.size(0), device);
+      torch::Tensor d_loss = d_loss_real + d_loss_fake;
+      discriminator_optimizer.step();
 
-        torch::Tensor fake_output = discriminator->forward(fake_images.detach()).reshape({fake_labels.sizes()});
-        torch::Tensor d_loss_fake = torch::binary_cross_entropy(fake_output, fake_labels);
-        d_loss_fake.backward();
+      // train generator
+      generator->zero_grad();
 
-        torch::Tensor d_loss = d_loss_real + d_loss_fake;
-        discriminator_optimizer.step();
+      fake_labels.fill_(1);
+      fake_output = discriminator->forward(fake_images).reshape({fake_labels.sizes()});
 
-        // train generator
-        generator->zero_grad();
+      torch::Tensor g_loss = torch::binary_cross_entropy(fake_output, fake_labels);
+      g_loss.backward();
 
-        fake_labels.fill_(1);
-        fake_output = discriminator->forward(fake_images).reshape({fake_labels.sizes()});
+      generator_optimizer.step();
 
-        torch::Tensor g_loss = torch::binary_cross_entropy(fake_output, fake_labels);
-        g_loss.backward();
+      batch_index++;
+      checkpoint_counter++;
 
-        batch_index++;
+      if ((batch_index % klog_interval) == 0)
+      {
+        std::cout << "[" << epoch << "/" << knumber_of_epochs << "] [" << batch_index << "/" << batches_per_epoch << "] D_loss: " << d_loss.item<float>() << " G_loss: " << g_loss.item<float>() << "\n";
+      }
 
-        if ((batch_index % klog_interval) == 0)
-        {
-          std::cout << "[" << epoch << "/" << knumber_of_epochs << "] [" << batch_index << "/" << batches_per_epoch << "] D_loss: " << d_loss.item<float>() << " G_loss: " << g_loss.item<float>() << "\n";
-        }
+      if ((checkpoint_counter % kcheckpoint_interval) == 0)
+      {
+        torch::save(generator, "gen_chkpt.pt");
+        torch::save(generator_optimizer, "genop_chkpt.pt");
+        torch::save(discriminator, "dis_chkpt.pt");
+        torch::save(generator_optimizer, "disop_chkpt.pt");
 
-        if ((batch_index % kcheckpoint_interval) == 0)
-        {
-          torch::save(generator, "gen_chkpt.pt");
-          torch::save(generator_optimizer, "genop_chkpt.pt");
-          torch::save(discriminator, "dis_chkpt.pt");
-          torch::save(generator_optimizer, "disop_chkpt.pt");
+        torch::Tensor samples = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
+        torch::save(((samples + 1) / 2.0), torch::str("dcgan-sample-", checkpoint_counter, ".pt"));
 
-          torch::Tensor samples = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
-          torch::save((samples + 1) / 2.0
-                            ,torch::str("dcgan-sample-", checkpoint_counter, ".pt"));
+#if SAVE_IMAGES_RGB
+        torch::Tensor rgb = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
+        rgb = (rgb + 1) / 2.0;
+        rgb = rgb.squeeze().detach();
+        //rgb = rgb.permute({0,1,2}).contiguous();
+        rgb = rgb.contiguous();
+        rgb = rgb.mul(255).clamp(0, 255).to(torch::kU8);
+        rgb = rgb.to(torch::kCPU);
 
-          std::cout << "\n-> checkpoint " << ++checkpoint_counter << "\n";
-        }
+        std::cout << "w: " << rgb.size(0) << " h: " << rgb.size(2) << " c: " << rgb.size(1) << std::endl;
+
+        std::ofstream f_out("test" + std::to_string(checkpoint_counter) + ".rgb");
+
+        const uint8_t* hh = rgb.data_ptr<uint8_t>();
+        int w = rgb.size(0);
+        int h = rgb.size(2);
+        int c = rgb.size(1);
+
+        f_out.write((char*)hh, (w*h*c));
+        f_out.flush();
+        f_out.close();
+#endif
+
+        std::cout << "\n-> checkpoint " << checkpoint_counter << "\n\n";
+      }
     }
   }
 

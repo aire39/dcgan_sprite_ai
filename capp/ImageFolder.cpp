@@ -6,11 +6,17 @@
 
 #include <iostream>
 #include <filesystem>
-#include <fstream>
+
+#define SAVE_RAW_IMAGE_DATA false
+#define PRINT_IMAGE_COUNTER false
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image.h"
 #include "stb/stb_image_resize.h"
+
+#if SAVE_RAW_IMAGE_DATA
+#include <fstream>
+#endif
 
 namespace {
   std::vector<std::tuple<std::string,std::string,int64_t>> loadfiles(std::string & folder_path, char deliminator)
@@ -56,6 +62,12 @@ ImageFolder::ImageFolder(std::string folder_path, char deliminator)
 
 torch::data::Example<> ImageFolder::get(size_t index)
 {
+  numberUsed++;
+
+#if PRINT_IMAGE_COUNTER
+  std::cout << numberUsed << "\n";
+#endif
+
   auto [image_path, image_ext, image_label] = images[index];
 
   int32_t width, height, channels;
@@ -65,7 +77,7 @@ torch::data::Example<> ImageFolder::get(size_t index)
   int32_t new_height = 64;
   int32_t new_channel = 3;
 
-  static std::vector<uint8_t> uimage(new_width*new_height*new_channel);
+  std::vector<uint8_t> uimage(new_width*new_height*new_channel);
 
   stbir_resize_uint8(image,
                      width,
@@ -77,10 +89,12 @@ torch::data::Example<> ImageFolder::get(size_t index)
                      0,
                      new_channel);
 
-  //std::cout << "loading image: " << image_path << " width: " << new_width << " height: " << new_height << " size: " << uimage.size() << "\n";
-  //std::ofstream output("test/test_" + std::to_string(image_label));
-  //output.write(reinterpret_cast<char*>(uimage.data()), (new_width*new_height*new_channel));
-  //output.close();
+#if SAVE_RAW_IMAGE_DATA
+  std::cout << "loading image: " << image_path << " width: " << new_width << " height: " << new_height << " size: " << uimage.size() << "\n";
+  std::ofstream output("test/test_" + std::to_string(image_label));
+  output.write(reinterpret_cast<char*>(uimage.data()), (new_width*new_height*new_channel));
+  output.close();
+#endif
 
   torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
   img_tensor = img_tensor.permute({2, 0, 1});

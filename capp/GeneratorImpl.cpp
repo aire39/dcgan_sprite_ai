@@ -2,8 +2,8 @@
 
 GeneratorImpl::GeneratorImpl(int64_t noise_size)
   : convolutions{{
-      {torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(noise_size, 512, 4).bias(false))}
-     ,{torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(512, 256, 4).bias(false))}
+      {torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(noise_size, 512, 4).stride(1).padding(0).bias(false))}
+     ,{torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(512, 256, 4).stride(2).padding(1).bias(false))}
      ,{torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(256, 128, 4).stride(2).padding(1).bias(false))}
      ,{torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(128, 64, 4).stride(2).padding(1).bias(false))}
      ,{torch::nn::ConvTranspose2d(torch::nn::ConvTranspose2dOptions(64, 3, 4).stride(2).padding(1).bias(false))}
