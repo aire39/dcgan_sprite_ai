@@ -13,3 +13,5 @@ class GeneratorImpl : public torch::nn::Module {
     std::array<torch::nn::ConvTranspose2d, 4> convolutions;
     std::array<torch::nn::BatchNorm2d, 3> batchNormalizations;
 };
+
+TORCH_MODULE(Generator);
