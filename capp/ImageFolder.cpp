@@ -6,7 +6,11 @@
 
 #include <iostream>
 #include <filesystem>
-#include "cimg/CImg.h"
+#include <fstream>
+
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image.h"
+#include "stb/stb_image_resize.h"
 
 namespace {
   std::vector<std::tuple<std::string,std::string,int64_t>> loadfiles(std::string & folder_path, char deliminator)
@@ -54,12 +58,32 @@ torch::data::Example<> ImageFolder::get(size_t index)
 {
   auto [image_path, image_ext, image_label] = images[index];
 
-  cimg_library::CImg<uint8_t> image(image_path.c_str());
-  image.resize(64, 64, 1, 3);
+  int32_t width, height, channels;
+  uint8_t *image = stbi_load(image_path.data(), &width, &height, &channels, 3);
 
-  torch::Tensor img_tensor = torch::from_blob(image.data(), {image.width(), image.height(), 3}, torch::kByte).clone();
+  int32_t new_width = 64;
+  int32_t new_height = 64;
+  int32_t new_channel = 3;
+
+  static std::vector<uint8_t> uimage(new_width*new_height*new_channel);
+
+  stbir_resize_uint8(image,
+                     width,
+                     height,
+                     0,
+                     uimage.data(),
+                     new_width,
+                     new_height,
+                     0,
+                     new_channel);
+
+  //std::cout << "loading image: " << image_path << " width: " << new_width << " height: " << new_height << " size: " << uimage.size() << "\n";
+  //std::ofstream output("test/test_" + std::to_string(image_label));
+  //output.write(reinterpret_cast<char*>(uimage.data()), (new_width*new_height*new_channel));
+  //output.close();
+
+  torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
   img_tensor = img_tensor.permute({2, 0, 1});
-
   torch::Tensor label_tensor = torch::full({1}, image_label);
 
   return {img_tensor, label_tensor};
