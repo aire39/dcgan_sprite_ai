@@ -11,9 +11,9 @@ class ImageFolder : public torch::data::Dataset<ImageFolder> {
     explicit ImageFolder(std::string folder_path, char deliminator);
 
     torch::data::Example<> get(size_t index) override;
-    torch::optional<size_t> size() const override;
+    [[nodiscard]] torch::optional<size_t> size() const override;
 
   private:
     std::vector<std::tuple<std::string,std::string,int64_t>> images; // tuple: image file path, label
-
+    int64_t numberUsed = 0;
 };
