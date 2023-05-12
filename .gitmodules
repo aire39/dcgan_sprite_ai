@@ -1,6 +1,6 @@
 [submodule "libs/sfml"]
 	path = libs/sfml
 	url = https://github.com/SFML/SFML.git
-[submodule "libs/cimg"]
-	path = libs/cimg
-	url = https://github.com/GreycLab/CImg.git
+[submodule "libs/stb"]
+	path = libs/stb
+	url = https://github.com/nothings/stb.git
