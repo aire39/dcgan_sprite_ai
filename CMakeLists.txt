@@ -80,7 +80,7 @@ endif (${BUILD_EXAMPLES})
 
 add_executable(spriteai
         capp/main.cpp
-        capp/GeneratorImpl.cpp capp/GeneratorImpl.h capp/DiscriminatorImpl.cpp capp/ImageFolder.cpp capp/ImageFolder.h capp/SeqDiscriminator.cpp capp/SeqDiscriminator.h)
+        capp/GeneratorImpl.cpp capp/GeneratorImpl.h capp/DiscriminatorImpl.cpp capp/ImageFolder.cpp capp/ImageFolder.h capp/SeqDiscriminator.cpp capp/SeqDiscriminator.h capp/DCGANUtils.h capp/DCGANUtils.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME}
         ${TORCH_LIBRARIES}
         sfml-window
