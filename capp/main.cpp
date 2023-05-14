@@ -13,7 +13,7 @@
 int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 {
   constexpr int64_t knoise_size = 100;
-  constexpr int64_t kbatch_size = 256;
+  constexpr int64_t kbatch_size = 64;
   constexpr int32_t knumber_of_workers = 4;
   constexpr int32_t knumber_of_epochs = 108;//1000;
   constexpr bool kenforce_order = false;
@@ -81,8 +81,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       discriminator->zero_grad();
       torch::Tensor real_images = batch.data.to(device);
       torch::Tensor real_labels = torch::empty(batch.data.size(0), device).uniform_(0.8, 1.0);
-      torch::Tensor real_output = discriminator->forward(real_images).view(-1);//.reshape({real_labels.sizes()});
-      //torch::Tensor real_output = discriminator->forward(real_images);
+      torch::Tensor real_output = discriminator->forward(real_images).view(-1);
       torch::Tensor d_loss_real = torch::binary_cross_entropy(real_output, real_labels);
       d_loss_real.backward();
 
@@ -90,8 +89,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       torch::Tensor noise = torch::randn({batch.data.size(0), klaten, 1, 1}, device);
       torch::Tensor fake_images = generator->forward(noise);
       torch::Tensor fake_labels = torch::zeros(batch.data.size(0), device);
-      torch::Tensor fake_output = discriminator->forward(fake_images.detach()).view(-1);//.reshape({fake_labels.sizes()});
-      //torch::Tensor fake_output = discriminator->forward(fake_images.detach());
+      torch::Tensor fake_output = discriminator->forward(fake_images.detach()).view(-1);
       torch::Tensor d_loss_fake = torch::binary_cross_entropy(fake_output, fake_labels);
       d_loss_fake.backward();
 
@@ -102,8 +100,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       generator->zero_grad();
 
       fake_labels.fill_(1);
-      fake_output = discriminator->forward(fake_images).view(-1);//.reshape({fake_labels.sizes()});
-      //fake_output = discriminator->forward(fake_images);
+      fake_output = discriminator->forward(fake_images).view(-1);
 
       torch::Tensor g_loss = torch::binary_cross_entropy(fake_output, fake_labels);
       g_loss.backward();
@@ -130,37 +127,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
 #if SAVE_IMAGES_RGB
         torch::Tensor rgb = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
-        std::cout << "samples dim: " << rgb.dim() << std::endl;
-
-        /* original
-         * [0] = 1
-         * [1] = 64
-         * [2] = 3
-         * [3] = 64
-         *
-         * */
-
-        /* permute ex
-         * [0] = 64
-         * [1] = 3
-         * [2] = 1
-         * [3] = 64
-         *
-         * */
-
-        /* stack overflow ex permute
-         * [0] = 3
-         * [1] = 64
-         * [2] = 1
-         * [3] = 64
-         *
-         * */
-
-        //rgb = torch::stack(rgb);
-        //rgb = torch::cat({rgb, rgb, rgb}, 1);
-        //rgb = rgb.unsqueeze(0);
-        std::cout << "rgb_tensor w: " << rgb.size(3) << " h: " << rgb.size(2) << " c: " << rgb.size(1) << " ?:" << rgb.size(0) << std::endl;
-        std::cout << "rgb_tensor w: " << rgb.size(0) << " h: " << rgb.size(1) << " c: " << rgb.size(2) << " ?:" << rgb.size(3) << std::endl;
+        std::cout << "rgb_tensor w: " << rgb.size(3) << " h: " << rgb.size(2) << " c: " << rgb.size(1) << " layers:" << rgb.size(0) << " dim: " << rgb.dim() << std::endl;
 
         constexpr int32_t rgb_padding = 0;
         constexpr int32_t rgb_pad_value = 0;
@@ -189,8 +156,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
         grid = (grid + 1) / 2.0;
         grid = grid.squeeze().detach();
-        //grid = rgb.permute({1,2,0}).contiguous();
-        grid = grid.contiguous();
+        grid = grid.permute({1,2,0}).contiguous();
         grid = grid.mul(255).clamp(0, 255).to(torch::kU8);
         grid = grid.to(torch::kCPU);
 
