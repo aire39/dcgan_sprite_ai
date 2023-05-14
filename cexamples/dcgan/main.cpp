@@ -21,7 +21,7 @@ const char* kDataFolder = "./data";
 const int64_t kCheckpointEvery = 200;
 
 // How many images to sample at every checkpoint.
-const int64_t kNumberOfSamplesPerCheckpoint = 10;
+const int64_t kNumberOfSamplesPerCheckpoint = 64;
 
 // Set to `true` to restore models and optimizers from previously saved
 // checkpoints.

@@ -7,14 +7,14 @@
 #include <iostream>
 #include <filesystem>
 
-#define SAVE_RAW_IMAGE_DATA false
+#define SAVE_RAW_INPUT_IMAGE_DATA false
 #define PRINT_IMAGE_COUNTER false
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image.h"
 #include "stb/stb_image_resize.h"
 
-#if SAVE_RAW_IMAGE_DATA
+#if SAVE_RAW_INPUT_IMAGE_DATA
 #include <fstream>
 #endif
 
@@ -55,7 +55,9 @@ namespace {
   }
 }
 
-ImageFolder::ImageFolder(std::string folder_path, char deliminator)
+ImageFolder::ImageFolder(std::string folder_path, char deliminator, int32_t expected_width, int32_t expected_height)
+  : expectedWidth (expected_width)
+  , expectedHeight (expected_height)
 {
   images = loadfiles(folder_path, deliminator);
 }
@@ -70,12 +72,14 @@ torch::data::Example<> ImageFolder::get(size_t index)
 
   auto [image_path, image_ext, image_label] = images[index];
 
-  int32_t width, height, channels;
-  uint8_t *image = stbi_load(image_path.data(), &width, &height, &channels, 3);
+  constexpr int64_t desired_num_channels = 3;
 
-  int32_t new_width = 64;
-  int32_t new_height = 64;
-  int32_t new_channel = 3;
+  int32_t width, height, channels;
+  uint8_t *image = stbi_load(image_path.data(), &width, &height, &channels, desired_num_channels);
+
+  int32_t new_width = expectedWidth;
+  int32_t new_height = expectedHeight;
+  int32_t new_channel = desired_num_channels;
 
   std::vector<uint8_t> uimage(new_width*new_height*new_channel);
 
@@ -94,7 +98,7 @@ torch::data::Example<> ImageFolder::get(size_t index)
   img_tensor = img_tensor.permute({2, 0, 1});
   torch::Tensor label_tensor = torch::full({1}, image_label);
 
-#if SAVE_RAW_IMAGE_DATA
+#if SAVE_RAW_INPUT_IMAGE_DATA
   std::cout << "loading image: " << image_path << " width: " << new_width << " height: " << new_height << " size: " << uimage.size() << "\n";
   std::ofstream output("test/test_" + std::to_string(image_label) + ".rgb");
   output.write(reinterpret_cast<char*>(uimage.data()), (new_width*new_height*new_channel));
