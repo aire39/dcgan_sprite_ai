@@ -89,16 +89,17 @@ torch::data::Example<> ImageFolder::get(size_t index)
                      0,
                      new_channel);
 
+  torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
+
+  img_tensor = img_tensor.permute({2, 0, 1});
+  torch::Tensor label_tensor = torch::full({1}, image_label);
+
 #if SAVE_RAW_IMAGE_DATA
   std::cout << "loading image: " << image_path << " width: " << new_width << " height: " << new_height << " size: " << uimage.size() << "\n";
-  std::ofstream output("test/test_" + std::to_string(image_label));
+  std::ofstream output("test/test_" + std::to_string(image_label) + ".rgb");
   output.write(reinterpret_cast<char*>(uimage.data()), (new_width*new_height*new_channel));
   output.close();
 #endif
-
-  torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
-  img_tensor = img_tensor.permute({2, 0, 1});
-  torch::Tensor label_tensor = torch::full({1}, image_label);
 
   return {img_tensor, label_tensor};
 }
