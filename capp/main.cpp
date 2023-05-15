@@ -191,6 +191,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
         window.AddRawImageReals(raw_realimage_output);
         window.AddRawImageFakes(raw_fakeimage_output);
+
+        window.AddDCGANPoint(checkpoint_counter, {d_loss.item<double>(), g_loss.item<double>(), 0.0, 0.0});
       }
     }
   }
