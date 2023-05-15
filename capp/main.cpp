@@ -148,10 +148,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
         torch::Tensor samples_fake = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
         dcgan_utils::RawImageData raw_fakeimage_output = dcgan_utils::ConvertTensorToRawImage(samples_fake, 0, 0);
 
-        //auto & real_batch = *(*data_loader).begin();
-        torch::Tensor samples_real = real_images.clone();//real_batch.data.to(device);
-        std::cout << "REAL: " << samples_real.sizes() << std::endl;
-        //torch::Tensor samples_real = samples_fake.clone();
+        torch::Tensor samples_real = real_images.clone();
+        samples_real = torch::resize(samples_real, {64,3,64,64});
         dcgan_utils::RawImageData raw_realimage_output = dcgan_utils::ConvertTensorToRawImage(samples_real, 0, 0);
 
         window.AddRawImageReals(raw_realimage_output);
