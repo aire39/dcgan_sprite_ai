@@ -4,6 +4,7 @@
 #include "SeqDiscriminator.h"
 #include "ImageFolder.h"
 #include "DCGANUtils.h"
+#include "Window.h"
 
 #define SAVE_IMAGES_RGB true
 #if SAVE_IMAGES_RGB
@@ -13,6 +14,9 @@
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 {
+  Window window;
+  window.Run();
+
   constexpr int32_t image_size = 64; // WxH
   constexpr int64_t knoise_size = 100;
   constexpr int64_t kbatch_size = 128;
@@ -25,6 +29,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   constexpr int64_t klaten = 100;
   constexpr int64_t klog_interval = 4;
   constexpr int64_t kcheckpoint_interval = 200;
+  constexpr int64_t kdisplay_interval = 50;
   constexpr int64_t knumber_of_samples_per_checkpoint = 64;
   constexpr char default_image_path[] = "data/creatures/images";
 
@@ -136,6 +141,21 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 #endif
 
         std::cout << "\n-> checkpoint " << checkpoint_counter << "\n\n";
+      }
+
+      if ((checkpoint_counter % kdisplay_interval) == 0)
+      {
+        torch::Tensor samples_fake = generator->forward(torch::randn({knumber_of_samples_per_checkpoint, klaten, 1, 1}, device));
+        dcgan_utils::RawImageData raw_fakeimage_output = dcgan_utils::ConvertTensorToRawImage(samples_fake, 0, 0);
+
+        //auto & real_batch = *(*data_loader).begin();
+        torch::Tensor samples_real = real_images.clone();//real_batch.data.to(device);
+        std::cout << "REAL: " << samples_real.sizes() << std::endl;
+        //torch::Tensor samples_real = samples_fake.clone();
+        dcgan_utils::RawImageData raw_realimage_output = dcgan_utils::ConvertTensorToRawImage(samples_real, 0, 0);
+
+        window.AddRawImageReals(raw_realimage_output);
+        window.AddRawImageFakes(raw_fakeimage_output);
       }
     }
   }
