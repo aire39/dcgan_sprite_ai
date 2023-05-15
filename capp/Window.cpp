@@ -40,9 +40,24 @@ void Window::AddRawImageReals(dcgan_utils::RawImageData raw_image)
     realImage = std::move(raw_image);
 }
 
+void Window::AddDCGANPoint(int32_t x, dcgan_utils::DataPlot::dcgan_values values)
+{
+  std::lock_guard<std::mutex> lock(addPointMtx);
+  if (!graph)
+  {
+    graph = std::make_unique<DrawGraph>(graphData);
+  }
+
+  dcgan_utils::DataPlot data;
+  data.x = x;
+  data.dcganValues = values;
+
+  graphData.push_back(data);
+}
+
 void Window::WindowTask()
 {
-  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1600, 600), "DCGAN Results");
+  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1600, 800), "DCGAN Results");
   window->setActive(true);
 
   sf::Texture texture_fake;
@@ -69,6 +84,8 @@ void Window::WindowTask()
   sprite_real.setTexture(texture_real);
   sprite_real.setPosition(144, 44);
 
+  int32_t n_shifts = 0;
+
   while(isRunning)
   {
     sf::Event event{};
@@ -84,6 +101,14 @@ void Window::WindowTask()
       {
         glViewport(0, 0, static_cast<int32_t>(event.size.width), static_cast<int32_t>(event.size.height));
       }
+    }
+
+    if (graphData.size() > 157)
+    {
+      graphData.erase(graphData.begin());
+
+      n_shifts++;
+      graph->SetShift(n_shifts * 10);
     }
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -123,6 +148,13 @@ void Window::WindowTask()
 
     window->draw(sprite_fake);
     window->draw(sprite_real);
+
+    if (graph)
+    {
+      std::lock_guard<std::mutex> lock(addPointMtx);
+      graph->SetPosition(10, 790);
+      graph->Draw(window.get());
+    }
 
     window->display();
 
