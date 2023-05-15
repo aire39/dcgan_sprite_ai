@@ -131,8 +131,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 #if SAVE_IMAGES_RGB
         dcgan_utils::RawImageData raw_fakeimage_output = dcgan_utils::ConvertTensorToRawImage(samples, 0, 0);
 
-        const std::string output_path = "output_images/test" + std::to_string(checkpoint_counter) + ".rgb";
-        dcgan_utils::SaveRawImageDataToFile(output_path, raw_fakeimage_output);
+        const std::string output_path = "output_images/test" + std::to_string(checkpoint_counter);
+        dcgan_utils::SaveRawImageDataToFile(output_path, raw_fakeimage_output, dcgan_utils::IMAGE_OUTPUT_TYPE::PNG);
 #endif
 
         std::cout << "\n-> checkpoint " << checkpoint_counter << "\n\n";
