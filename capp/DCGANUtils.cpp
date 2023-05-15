@@ -1,5 +1,12 @@
 #include "DCGANUtils.h"
 
+#ifdef __clang__
+#define STBIWDEF static inline
+#endif
+#define STB_IMAGE_WRITE_STATIC
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
 #include <fstream>
 
 namespace dcgan_utils {
@@ -40,20 +47,46 @@ namespace dcgan_utils {
     std::cout << "output grid tensor w: " << grid.size(2) << " h: " << grid.size(1) << " c: " << grid.size(0) << " size: " << grid.sizes() << std::endl;
 
     auto output_data = grid.data_ptr<uint8_t>();
-    int64_t output_width = grid.size(2);
+    int64_t output_width = grid.size(0);
     int64_t output_height = grid.size(1);
-    int64_t output_color_depth = grid.size(0);
-
+    int64_t output_color_depth = grid.size(2);
     int64_t byte_size = output_height * output_width * output_color_depth;
 
-    return {grid, output_data, output_width, output_height, output_color_depth, byte_size};
+    RawImageData raw_image_data;
+    raw_image_data.tensor = grid;
+    raw_image_data.data = output_data;
+    raw_image_data.width = output_width;
+    raw_image_data.height = output_height;
+    raw_image_data.color_depth = output_color_depth;
+    raw_image_data.byte_size = byte_size;
+
+    return raw_image_data;
   }
 
-  void SaveRawImageDataToFile(std::string file_path, const RawImageData & raw_image_data)
+  void SaveRawImageDataToFile(std::string file_path, const RawImageData & raw_image_data, IMAGE_OUTPUT_TYPE output_type)
   {
-    std::ofstream f_out(file_path);
-    f_out.write(reinterpret_cast<char*>(raw_image_data.data), raw_image_data.byte_size);
-    f_out.flush();
-    f_out.close();
+    auto image_width = static_cast<int32_t>(raw_image_data.width);
+    auto image_height = static_cast<int32_t>(raw_image_data.height);
+    auto image_color_depth = static_cast<int32_t>(raw_image_data.color_depth);
+
+    switch(output_type)
+    {
+        case IMAGE_OUTPUT_TYPE::JPG:
+          stbi_write_jpg((file_path + ".jpg").c_str(), image_width, image_height, image_color_depth, raw_image_data.data, 100);
+        break;
+
+        case IMAGE_OUTPUT_TYPE::PNG:
+          stbi_write_png((file_path + ".png").c_str(), image_width, image_height, image_color_depth, raw_image_data.data, (image_width*image_color_depth));
+        break;
+
+        case IMAGE_OUTPUT_TYPE::RAW:
+        default:
+        {
+          std::ofstream f_out(file_path + ".raw");
+          f_out.write(reinterpret_cast<char*>(raw_image_data.data), raw_image_data.byte_size);
+          f_out.flush();
+          f_out.close();
+        }
+    }
   }
 }
