@@ -7,7 +7,23 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
+#include <algorithm>
 #include <fstream>
+
+namespace {
+
+void norm_ip(torch::Tensor & img, double low, double high)
+{
+  img = img.clamp(low, high);
+  img = img.sub_(low).div_(std::max(high - low, 1e-5));
+}
+
+void norm_range(torch::Tensor & t)
+{
+  norm_ip(t, t.min().item<double>(), t.max().item<double>());
+}
+
+}
 
 namespace dcgan_utils {
 
@@ -15,15 +31,18 @@ namespace dcgan_utils {
   {
     std::cout << "input tensor w: " << tensor.size(3) << " h: " << tensor.size(2) << " c: " << tensor.size(1) << " layers:" << tensor.size(0) << " dim: " << tensor.dim() << std::endl;
 
-    int64_t nmaps = tensor.size(0);
+    torch::Tensor cp_tensor = tensor.clone();
+    norm_range(cp_tensor);
+
+    int64_t nmaps = cp_tensor.size(0);
     int64_t xmaps = 8;
     auto ymaps = static_cast<int64_t>(std::ceil(static_cast<double>(nmaps) / static_cast<double>(xmaps)));
-    int64_t height = tensor.size(2) + padding;
-    int64_t width = tensor.size(3) + padding;
-    int64_t nchannels = tensor.size(1);
+    int64_t height = cp_tensor.size(2) + padding;
+    int64_t width = cp_tensor.size(3) + padding;
+    int64_t nchannels = cp_tensor.size(1);
 
     int64_t k=0;
-    auto grid = tensor.new_full({nchannels, (height*ymaps + padding), (width*xmaps + padding)}, pad_value-1);
+    auto grid = cp_tensor.new_full({nchannels, (height*ymaps + padding), (width*xmaps + padding)}, pad_value-1);
     for (int64_t y=0; y<ymaps; y++)
     {
         for (int64_t x=0; x<xmaps; x++)
@@ -44,7 +63,7 @@ namespace dcgan_utils {
     grid = grid.mul(255).clamp(0, 255).to(torch::kU8);
     grid = grid.to(torch::kCPU);
 
-    std::cout << "output grid tensor w: " << grid.size(2) << " h: " << grid.size(1) << " c: " << grid.size(0) << " size: " << grid.sizes() << std::endl;
+    std::cout << "output grid tensor w: " << grid.size(0) << " h: " << grid.size(1) << " c: " << grid.size(2) << " size: " << grid.sizes() << std::endl;
 
     auto output_data = grid.data_ptr<uint8_t>();
     int64_t output_width = grid.size(0);

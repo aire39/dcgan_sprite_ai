@@ -6,10 +6,7 @@
 
 #include <chrono>
 #include <sfml/OpenGL.hpp>
-
-Window::Window()
-{
-}
+#include <utility>
 
 Window::~Window()
 {
@@ -24,7 +21,7 @@ void Window::Run()
   windowThread = std::thread(&Window::WindowTask, this);
 }
 
-void Window::AddRawImageFakes(dcgan_utils::RawImageData raw_image)
+void Window::AddRawImageFakes(const dcgan_utils::RawImageData& raw_image)
 {
   std::lock_guard<std::mutex> lock(addImageMtx);
   qFakeImages.push(raw_image);
@@ -33,16 +30,13 @@ void Window::AddRawImageFakes(dcgan_utils::RawImageData raw_image)
 void Window::AddRawImageReals(dcgan_utils::RawImageData raw_image)
 {
     std::lock_guard<std::mutex> lock(addImageMtx);
-    realImage = raw_image;
+    realImage = std::move(raw_image);
 }
 
 void Window::WindowTask()
 {
-  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1600, 600), "DCGAN");
+  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(1600, 600), "DCGAN Results");
   window->setActive(true);
-
-  sf::CircleShape shape_test(100.0f);
-  shape_test.setFillColor(sf::Color::Green);
 
   sf::Texture texture_fake;
   texture_fake.create(512, 512);
@@ -72,7 +66,7 @@ void Window::WindowTask()
 
   while(is_running)
   {
-    sf::Event event;
+    sf::Event event{};
 
     while(window->pollEvent(event))
     {
@@ -83,24 +77,25 @@ void Window::WindowTask()
       }
       else if (event.type == sf::Event::Resized)
       {
-        glViewport(0, 0, event.size.width, event.size.height);
+        glViewport(0, 0, static_cast<int32_t>(event.size.width), static_cast<int32_t>(event.size.height));
       }
     }
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     {
       std::lock_guard<std::mutex> lock(addImageMtx);
-      static float t = 0.0f;
-      float x = 300.0 * std::sin(t) + 300;
-      t += 0.01f;
-
-      shape_test.setPosition(x, 0);
 
       if (!qFakeImages.empty())
       {
         auto raw_image = qFakeImages.front();
+
+        if (!raw_image.data)
+        {
+          qFakeImages.pop();
+          continue;
+        }
 
         for(int i=0; i<raw_image.height; i++)
           for(int j=0; j<raw_image.width; j++)
@@ -118,12 +113,10 @@ void Window::WindowTask()
 
         qFakeImages.pop();
       }
-
     }
 
     window->draw(sprite_fake);
     window->draw(sprite_real);
-    //window->draw(shape_test);
 
     window->display();
 

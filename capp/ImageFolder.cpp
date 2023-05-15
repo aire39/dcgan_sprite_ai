@@ -83,15 +83,24 @@ torch::data::Example<> ImageFolder::get(size_t index)
 
   std::vector<uint8_t> uimage(new_width*new_height*new_channel);
 
-  stbir_resize_uint8(image,
-                     width,
-                     height,
-                     0,
-                     uimage.data(),
-                     new_width,
-                     new_height,
-                     0,
-                     new_channel);
+  stbir_resize(image
+              ,width
+              ,height
+              ,0
+              ,uimage.data()
+              ,new_width
+              ,new_height
+              ,0
+              ,STBIR_TYPE_UINT8
+              ,new_channel
+              ,-1
+              ,0
+              ,STBIR_EDGE_CLAMP
+              ,STBIR_EDGE_CLAMP
+              ,STBIR_FILTER_DEFAULT
+              ,STBIR_FILTER_DEFAULT
+              ,STBIR_COLORSPACE_LINEAR
+              ,nullptr);
 
   torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
 

@@ -9,11 +9,11 @@
 
 class Window {
   public:
-    Window();
+    Window() = default;
     ~Window();
 
     void Run();
-    void AddRawImageFakes(dcgan_utils::RawImageData raw_image);
+    void AddRawImageFakes(const dcgan_utils::RawImageData& raw_image);
     void AddRawImageReals(dcgan_utils::RawImageData raw_image);
 
   private:
