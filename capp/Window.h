@@ -13,6 +13,7 @@ class Window {
     ~Window();
 
     void Run();
+    void Close();
     void AddRawImageFakes(const dcgan_utils::RawImageData& raw_image);
     void AddRawImageReals(dcgan_utils::RawImageData raw_image);
 
@@ -22,6 +23,7 @@ class Window {
     std::queue<dcgan_utils::RawImageData> qFakeImages;
     std::unique_ptr<sf::RenderWindow> window;
     std::thread windowThread;
+    bool isRunning = true;
 
     void WindowTask();
 };

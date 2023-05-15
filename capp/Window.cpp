@@ -10,15 +10,22 @@
 
 Window::~Window()
 {
-  if(windowThread.joinable())
-  {
-    windowThread.join();
-  }
+  Close();
 }
 
 void Window::Run()
 {
   windowThread = std::thread(&Window::WindowTask, this);
+}
+
+void Window::Close()
+{
+  window->close();
+  isRunning = false;
+  if(windowThread.joinable())
+  {
+    windowThread.join();
+  }
 }
 
 void Window::AddRawImageFakes(const dcgan_utils::RawImageData& raw_image)
@@ -62,9 +69,7 @@ void Window::WindowTask()
   sprite_real.setTexture(texture_real);
   sprite_real.setPosition(144, 44);
 
-  bool is_running = true;
-
-  while(is_running)
+  while(isRunning)
   {
     sf::Event event{};
 
@@ -73,7 +78,7 @@ void Window::WindowTask()
       if (event.type == sf::Event::Closed)
       {
         window->close();
-        is_running = false;
+        isRunning = false;
       }
       else if (event.type == sf::Event::Resized)
       {
@@ -97,15 +102,16 @@ void Window::WindowTask()
           continue;
         }
 
+        constexpr uint8_t alpha = 255;
         for(int i=0; i<raw_image.height; i++)
           for(int j=0; j<raw_image.width; j++)
           {
-            int red = ((j*(int)raw_image.color_depth)+0) + i*(int)(raw_image.width*raw_image.color_depth);
-            int green = ((j*(int)raw_image.color_depth)+1) + i*(int)(raw_image.width*raw_image.color_depth);
-            int blue = ((j*(int)raw_image.color_depth)+2) + i*(int)(raw_image.width*raw_image.color_depth);
+            int red_index = ((j*(int)raw_image.color_depth)+0) + i*(int)(raw_image.width*raw_image.color_depth);
+            int green_index = ((j*(int)raw_image.color_depth)+1) + i*(int)(raw_image.width*raw_image.color_depth);
+            int blue_index = ((j*(int)raw_image.color_depth)+2) + i*(int)(raw_image.width*raw_image.color_depth);
 
-            img_fake.setPixel(j, i, sf::Color(raw_image.data[red], raw_image.data[green], raw_image.data[blue], 255));
-            img_real.setPixel(j, i, sf::Color(realImage.data[red], realImage.data[green], realImage.data[blue], 255));
+            img_fake.setPixel(j, i, sf::Color(raw_image.data[red_index], raw_image.data[green_index], raw_image.data[blue_index], alpha));
+            img_real.setPixel(j, i, sf::Color(realImage.data[red_index], realImage.data[green_index], realImage.data[blue_index], alpha));
           }
 
         texture_fake.update(img_fake);

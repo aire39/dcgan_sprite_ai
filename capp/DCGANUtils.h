@@ -17,6 +17,6 @@ namespace dcgan_utils {
     int64_t byte_size = 0;
   };
 
-  RawImageData ConvertTensorToRawImage(const torch::Tensor & tensor, int32_t padding, int32_t pad_value);
+  RawImageData ConvertTensorToRawImage(const torch::Tensor & tensor, int32_t padding, int32_t pad_value, bool normalize);
   void SaveRawImageDataToFile(std::string file_path, const RawImageData & raw_image_data, IMAGE_OUTPUT_TYPE output_type);
 }

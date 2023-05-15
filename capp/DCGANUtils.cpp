@@ -7,6 +7,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
+#define PRINT_IMAGE_FILE_OUTPUT_INFO false
+#define PRINT_IMAGE_TENSOR2IMG_INFO false
+
+#include <string>
 #include <algorithm>
 #include <fstream>
 
@@ -27,10 +31,8 @@ void norm_range(torch::Tensor & t)
 
 namespace dcgan_utils {
 
-  RawImageData ConvertTensorToRawImage(const torch::Tensor & tensor, int32_t padding, int32_t pad_value)
+  RawImageData ConvertTensorToRawImage(const torch::Tensor & tensor, int32_t padding, int32_t pad_value, bool normalize)
   {
-    std::cout << "input tensor w: " << tensor.size(3) << " h: " << tensor.size(2) << " c: " << tensor.size(1) << " layers:" << tensor.size(0) << " dim: " << tensor.dim() << std::endl;
-
     torch::Tensor cp_tensor = tensor.clone();
     norm_range(cp_tensor);
 
@@ -52,7 +54,7 @@ namespace dcgan_utils {
                 break;
             }
 
-            grid.narrow(1, y*height+padding, height-padding).narrow(2, x*width+padding, width-padding).copy_(tensor[k]);
+            grid.narrow(1, y*height+padding, height-padding).narrow(2, x*width+padding, width-padding).copy_(cp_tensor[k]);
             k++;
         }
     }
@@ -62,8 +64,6 @@ namespace dcgan_utils {
     grid = grid.permute({1,2,0}).contiguous();
     grid = grid.mul(255).clamp(0, 255).to(torch::kU8);
     grid = grid.to(torch::kCPU);
-
-    std::cout << "output grid tensor w: " << grid.size(0) << " h: " << grid.size(1) << " c: " << grid.size(2) << " size: " << grid.sizes() << std::endl;
 
     auto output_data = grid.data_ptr<uint8_t>();
     int64_t output_width = grid.size(0);
@@ -79,33 +79,49 @@ namespace dcgan_utils {
     raw_image_data.color_depth = output_color_depth;
     raw_image_data.byte_size = byte_size;
 
+#if PRINT_IMAGE_TENSOR2IMG_INFO
+    std::string info = "input tensor w: " + std::to_string(tensor.size(3)) + " h: " + std::to_string(tensor.size(2)) + " c: " + std::to_string(tensor.size(1)) + " layers:" + std::to_string(tensor.size(0)) + " dim: " + std::to_string(tensor.dim()) + "\n";
+    info += "output grid tensor w: " + std::to_string(grid.size(0)) + " h: " + std::to_string(grid.size(1)) + " c: " + std::to_string(grid.size(2));
+    std::cout << info << " grid size: " << grid.sizes() << std::endl;
+#endif
+
     return raw_image_data;
   }
 
   void SaveRawImageDataToFile(std::string file_path, const RawImageData & raw_image_data, IMAGE_OUTPUT_TYPE output_type)
   {
+    auto image_data = raw_image_data.data;
     auto image_width = static_cast<int32_t>(raw_image_data.width);
     auto image_height = static_cast<int32_t>(raw_image_data.height);
     auto image_color_depth = static_cast<int32_t>(raw_image_data.color_depth);
 
+    std::string output_type_str;
+
     switch(output_type)
     {
         case IMAGE_OUTPUT_TYPE::JPG:
-          stbi_write_jpg((file_path + ".jpg").c_str(), image_width, image_height, image_color_depth, raw_image_data.data, 100);
+          output_type_str = "OUTPUT IMAGE (JPG):";
+          stbi_write_jpg((file_path + ".jpg").c_str(), image_width, image_height, image_color_depth, image_data, 100);
         break;
 
         case IMAGE_OUTPUT_TYPE::PNG:
-          stbi_write_png((file_path + ".png").c_str(), image_width, image_height, image_color_depth, raw_image_data.data, (image_width*image_color_depth));
+          output_type_str = "OUTPUT IMAGE (PNG):";
+          stbi_write_png((file_path + ".png").c_str(), image_width, image_height, image_color_depth, image_data, (image_width*image_color_depth));
         break;
 
         case IMAGE_OUTPUT_TYPE::RAW:
         default:
         {
+          output_type_str = "OUTPUT IMAGE (RAW):";
           std::ofstream f_out(file_path + ".raw");
-          f_out.write(reinterpret_cast<char*>(raw_image_data.data), raw_image_data.byte_size);
+          f_out.write(reinterpret_cast<char*>(image_data), raw_image_data.byte_size);
           f_out.flush();
           f_out.close();
         }
     }
+
+#if PRINT_IMAGE_FILE_OUTPUT_INFO
+    std::cout << output_type_str << " W: " << image_width << " H: " << image_height << " C: " << image_color_depth << " path: " << file_path << "\n";
+#endif
   }
 }

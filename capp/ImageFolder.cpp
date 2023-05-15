@@ -103,8 +103,8 @@ torch::data::Example<> ImageFolder::get(size_t index)
               ,nullptr);
 
   torch::Tensor img_tensor = torch::from_blob(uimage.data(), {new_height, new_width, new_channel}, torch::kByte).clone();
-
   img_tensor = img_tensor.permute({2, 0, 1});
+
   torch::Tensor label_tensor = torch::full({1}, image_label);
 
 #if SAVE_RAW_INPUT_IMAGE_DATA
