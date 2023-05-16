@@ -42,7 +42,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   int64_t gui_update = 10;
   app.add_option("-u,--gui_update", gui_update, "update frequency of gui window. how many samples must be completed before viewing");
 
-  CLI11_PARSE(app, argc, argv);
+  CLI11_PARSE(app, argc, argv)
 
   // Setup Window To See DCGAN running in real time
 
@@ -173,7 +173,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       torch::Tensor real_output = discriminator->forward(real_images).reshape({real_labels.sizes()});
       torch::Tensor d_loss_real = torch::binary_cross_entropy(real_output, real_labels);
       d_loss_real.backward();
-      double d_x = real_output.mean().item<double>();
+      auto d_x = real_output.mean().item<double>();
 
       // fake images
       torch::Tensor noise = torch::randn({batch.data.size(0), klaten, 1, 1}, device);
@@ -184,7 +184,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       torch::Tensor d_loss_fake = torch::binary_cross_entropy(fake_output, fake_labels);
       d_loss_fake.backward();
 
-      double dg_x = fake_images.mean().item<double>();
+      auto dg_x = fake_images.mean().item<double>();
 
       torch::Tensor d_loss = d_loss_real + d_loss_fake;
       discriminator_optimizer.step();
@@ -197,7 +197,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
       torch::Tensor g_loss = torch::binary_cross_entropy(fake_output, fake_labels);
       g_loss.backward();
 
-      double dg_x2 = fake_output.mean().item<double>();
+      auto dg_x2 = fake_output.mean().item<double>();
 
       generator_optimizer.step();
 
@@ -249,7 +249,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
         window.AddRawImageReals(raw_realimage_output);
         window.AddRawImageFakes(raw_fakeimage_output);
 
-        window.AddDCGANPoint(checkpoint_counter, {d_loss.item<double>(), g_loss.item<double>(), d_x, dg_x2});
+        window.AddDCGANPoint(static_cast<int32_t>(checkpoint_counter), {d_loss.item<double>(), g_loss.item<double>(), d_x, dg_x2});
       }
     }
   }
