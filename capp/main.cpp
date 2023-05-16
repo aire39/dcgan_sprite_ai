@@ -42,6 +42,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   int64_t gui_update = 10;
   app.add_option("-u,--gui_update", gui_update, "update frequency of gui window. how many samples must be completed before viewing");
 
+  bool add_weights = false;
+  app.add_flag("-w,--add_weights", add_weights, "add weights values");
+
   CLI11_PARSE(app, argc, argv)
 
   // Setup Window To See DCGAN running in real time
@@ -114,12 +117,20 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
   Generator generator (knoise_size);
   generator->to(device);
-  generator->apply(weights);
+
+  if (add_weights)
+  {
+    generator->apply(weights);
+  }
 
   SeqDiscriminator seq_discriminator(knegative_slope);
   auto & discriminator = seq_discriminator.GetDiscriminator();
   discriminator->to(device);
-  discriminator->apply(weights);
+
+  if(add_weights)
+  {
+    discriminator->apply(weights);
+  }
 
   auto dataset = ImageFolder(default_image_path, '_', image_size, image_size)
           .map(torch::data::transforms::Normalize<>(0.5, 0.5))
