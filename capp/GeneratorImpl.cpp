@@ -30,7 +30,7 @@ torch::Tensor GeneratorImpl::forward(torch::Tensor x)
 {
   for (size_t i=0; i<batchNormalizations.size(); i++)
   {
-    x = torch::relu(batchNormalizations[i](convolutions[i](x)));
+    x = torch::nn::functional::relu(batchNormalizations[i](convolutions[i](x)), torch::nn::functional::ReLUFuncOptions().inplace(true));
   }
 
   x = torch::tanh(convolutions[convolutions.size()-1](x));
