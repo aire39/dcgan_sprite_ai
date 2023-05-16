@@ -66,6 +66,7 @@ else()
 endif()
 
 include_directories(libs)
+include_directories(libs/CLI11/include)
 
 set(BUILD_SHARED_LIBS FALSE) # build using the static libraries
 add_subdirectory(libs/sfml)
