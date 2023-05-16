@@ -42,8 +42,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   int64_t gui_update = 10;
   app.add_option("-u,--gui_update", gui_update, "update frequency of gui window. how many samples must be completed before viewing");
 
-  bool add_weights = false;
-  app.add_flag("-w,--add_weights", add_weights, "add weights values");
+  bool use_weights = false;
+  app.add_flag("-w,--use_weights", use_weights, "add weights values");
+
+  double learn_rate = 0.0002;
+  app.add_flag("-l,--learn_rate", learn_rate, "set learn_rate for network. default: 0.0002");
 
   CLI11_PARSE(app, argc, argv)
 
@@ -64,7 +67,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   constexpr int32_t knumber_of_workers = 4;
   constexpr int32_t knumber_of_epochs = 1000;
   constexpr bool kenforce_order = false;
-  constexpr double klr = 0.0002;
+  const double klr = learn_rate;
   constexpr double kbeta1 = 0.5;
   constexpr double kbeta2 = 0.999;
   constexpr int64_t klaten = 100;
@@ -118,7 +121,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   Generator generator (knoise_size);
   generator->to(device);
 
-  if (add_weights)
+  if (use_weights)
   {
     generator->apply(weights);
   }
@@ -127,7 +130,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   auto & discriminator = seq_discriminator.GetDiscriminator();
   discriminator->to(device);
 
-  if(add_weights)
+  if(use_weights)
   {
     discriminator->apply(weights);
   }
