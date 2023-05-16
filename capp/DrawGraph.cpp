@@ -40,23 +40,19 @@ void DrawGraph::Draw(sf::RenderWindow * window)
 
   for (const auto & data : plotData)
   {
-    /////
-
     point.setFillColor(sf::Color::Red);
-    point.setPosition((x + data.x) - shift - 4.0f, (y + -(data.dcganValues.d_prob * 20)));
-    vertices_d_prob.append(sf::Vertex(sf::Vector2f((x + data.x) - shift, (y + -(data.dcganValues.d_prob * 20.0f))), sf::Color::Red));
+    point.setPosition((x + data.x) - shift - 4.0f, (y + -(data.dcganValues.d_prob * 100)));
+    vertices_d_prob.append(sf::Vertex(sf::Vector2f((x + data.x) - shift, (y + -(data.dcganValues.d_prob * 100.0f))), sf::Color::Red));
 
-    window->draw(&vertices_d_loss[0], vertices_d_loss.getVertexCount(), vertices_d_loss.getPrimitiveType());
+    window->draw(&vertices_d_prob[0], vertices_d_prob.getVertexCount(), vertices_d_prob.getPrimitiveType());
     window->draw(point);
 
     point.setFillColor(sf::Color::Magenta);
-    point.setPosition((x + data.x) - shift - 4.0f, (y + -data.dcganValues.dg_conf * 20));
-    vertices_g_conf.append(sf::Vertex(sf::Vector2f((x + data.x) - shift, (y + -(data.dcganValues.dg_conf * 20.0f))), sf::Color::Magenta));
+    point.setPosition((x + data.x) - shift - 4.0f, (y + -data.dcganValues.dg_conf * 100));
+    vertices_g_conf.append(sf::Vertex(sf::Vector2f((x + data.x) - shift, (y + -(data.dcganValues.dg_conf * 100.0f))), sf::Color::Magenta));
 
-    window->draw(&vertices_g_loss[0], vertices_g_loss.getVertexCount(), vertices_g_loss.getPrimitiveType());
+    window->draw(&vertices_g_conf[0], vertices_g_conf.getVertexCount(), vertices_g_conf.getPrimitiveType());
     window->draw(point);
-
-    /////
 
     point.setFillColor(sf::Color::Green);
     point.setPosition((x + data.x) - shift - 4.0f, (y + -(data.dcganValues.d_loss * 20)));
