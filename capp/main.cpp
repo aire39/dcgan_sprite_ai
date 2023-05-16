@@ -1,5 +1,6 @@
 #include <iostream>
 #include <torch/torch.h>
+#include <filesystem>
 #include "GeneratorImpl.h"
 #include "SeqDiscriminator.h"
 #include "ImageFolder.h"
@@ -22,6 +23,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
   std::string output_directory = "output_images";
   app.add_option("-o,--output_dir", output_directory, "location of output directory where results need to be saved. default dir: output_images");
+
+  if(!std::filesystem::is_directory(output_directory))
+  {
+    std::filesystem::create_directories(output_directory);
+  }
 
   std::string file_output_name = "test";
   app.add_option("-f,--output_file", file_output_name, "location of output filename (no need to add extension)");
