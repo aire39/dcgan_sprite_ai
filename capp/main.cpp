@@ -42,6 +42,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   int64_t gui_update = 10;
   app.add_option("-u,--gui_update", gui_update, "update frequency of gui window. how many samples must be completed before viewing");
 
+  int64_t user_log_interval = 4;
+  app.add_option("-i,--info_int", user_log_interval, "interval print info. how many itereations before we see a print of data from the training. default: 4");
+
   bool use_weights = false;
   app.add_flag("-w,--use_weights", use_weights, "add weights values");
 
@@ -64,14 +67,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
   constexpr int32_t image_size = 64; // WxH
   constexpr int64_t knoise_size = 100;
   constexpr int64_t kbatch_size = 128;
-  constexpr int32_t knumber_of_workers = 4;
+  constexpr int32_t knumber_of_workers = 2;
   constexpr int32_t knumber_of_epochs = 1000;
   constexpr bool kenforce_order = false;
   const double klr = learn_rate;
   constexpr double kbeta1 = 0.5;
   constexpr double kbeta2 = 0.999;
   constexpr int64_t klaten = 100;
-  constexpr int64_t klog_interval = 4;
+  const int64_t klog_interval = user_log_interval;
   constexpr int64_t kcheckpoint_interval = 200;
   int64_t kdisplay_interval = gui_update;
   constexpr int64_t knumber_of_samples_per_checkpoint = 64;

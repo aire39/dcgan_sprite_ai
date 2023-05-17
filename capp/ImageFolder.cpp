@@ -32,10 +32,30 @@ namespace {
       std::string extension = image_path.substr(find_start_of_extension);
 
       // grab the image index value from the name which is expected happen after the last deliminator character
-      size_t last_deliminator_char = image_path.find_last_of(deliminator) + 1;
+
+      auto last_deliminator_char = image_path.find_last_of(deliminator);
+
+      if (last_deliminator_char == std::string::npos)
+      {
+        last_deliminator_char = image_path.find_last_of('/');
+
+        if (last_deliminator_char == std::string::npos)
+        {
+          last_deliminator_char = 0;
+        }
+        else
+        {
+          last_deliminator_char += 1;
+        }
+      }
+      else
+      {
+        last_deliminator_char += 1;
+      }
+
       std::string image_index = image_path.substr(last_deliminator_char);
 
-      size_t last_dot_char_pos = image_index.find_first_of('.');
+      auto last_dot_char_pos = image_index.find_first_of('.');
       image_index = image_index.substr(0, last_dot_char_pos);
 
       int64_t label = 0;
