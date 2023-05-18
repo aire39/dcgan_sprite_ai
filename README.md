@@ -9,6 +9,8 @@ You will need MSYS2 to at tun the needed scripts.
 * MSYS2 (https://www.msys2.org)
   * We used this to make and run my shell scripts. I have a simple auto_compile.sh script that should be ran from\n the MSYS64 shell on Windows
 * CMake 3.23 or higher
+* Visual Studio 2019 or higher
+  * Can use CLion but will still need to use the Visual Studio compiler
 
 #### Tested with on
 * Windows 10, Windows 11
